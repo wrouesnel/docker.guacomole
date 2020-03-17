@@ -1,0 +1,22 @@
+sudo: required
+services:
+- docker
+before_install:
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo add-apt-repository "deb https://download.docker.com/linux/ubuntu $(lsb_release
+  -cs) main"
+- sudo apt-get update
+- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+script:
+- export TAG=$TRAVIS_BUILD_NUMBER
+- make all
+- docker tag $(cat .dockerid) $DOCKER_IMAGE:$TAG
+after_success:
+- |-
+  if [ $TRAVIS_PULL_REQUEST != "true" ]; then docker login -u $DOCKER_USER -p $DOCKER_PASS ; export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi` ;
+  docker tag $DOCKER_IMAGE:$TRAVIS_BUILD_NUMBER $DOCKER_IMAGE:$TAG ; if [ ! -z "$TRAVIS_TAG" ]; then docker tag $DOCKER_IMAGE:$TRAVIS_BUILD_NUMBER $DOCKER_IMAGE:$TRAVIS_TAG ; fi ; docker rmi $DOCKER_IMAGE:$TRAVIS_BUILD_NUMBER ; docker push $DOCKER_IMAGE ; fi
+env:
+  global:
+  - DOCKER_IMAGE=wrouesnel/guacomole
+  - DOCKER_USER=wrouesnel
+  - secure: Nzz+B1JUoCMk0rxH1gaY+DkoWK3kXrzalm62poQ1YHK6ylICMvc/5UQ8CL8ubEBygo3X0UpPVgQGtlOAkm5Zv4qbUnlHfUw6m+XC2r1iAynjr3+Q7fJam7tppk1ZOB4008FfS1VWOuXJOIEi+0w0HcC1Odlp8G8iMoDTJVTWSolsdhZSkGDBcH/lb4spsW9dvFbYXRc/yqgD321DlUx353N8WVfrKLZKRxS8NiKX1fzJ8mHopNmEqdbFeYWcvt4XlxykO+O4iWhKU9K42Kag/7c7K1R4qwKH54Rjrba2Nofo314VDzMTV0rpU3E303TH0/XJunlGvwGraYbBPikRd8tqqS8MD9zqFVgh8lFSVFHTrUyegKx2vfZPjW+N4ZutubYAULivmI7YOQ+B11iTRFppCMRjr4bi7Xqh+oxuosIwceMtblnaFFykZWAsnACML24dBvHLSLuyi4adTpOvT9jWi/x8LwyIhDSoelMx/l1IP+vZlJ88ouEa69+PP1B74CN+8Z9E8n7qU+PVB/rmnaNezOFyeRF50m/c2bQRPvaIR3s0DuXiFo+F03YpxFNLhIRXRKH4B7ja6YTCGGD3ZH6aV89nZ6zbYHu0A9fHZsP+yOtYiWo/3Xgl225w435GpouygTPe0T1ALm1kqiEEI+LjiPX8JSbK+K05PSrfP4Y=
